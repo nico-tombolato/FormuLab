@@ -10,10 +10,10 @@ import pandas as pd
 
 import random as rnd
 
-import pyscix.plots as plots
-import pyscix.utils as utils
-import pyscix.curve_fit as curve_fit
-import pyscix.config as cfg
+import formulab.plots as plots
+import formulab.utils as utils
+import formulab.curve_fit as curve_fit
+import formulab.config as cfg
 
 class sym():
     def __init__(self, name, unit=''):

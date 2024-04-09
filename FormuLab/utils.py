@@ -5,8 +5,8 @@ import numpy as np
 import pandas as pd
 from scipy import stats as st
 
-import pyscix.config as cfg
-import pyscix.objects as obj
+import formulab.config as cfg
+import formulab.objects as obj
 
 # Statistical Utils
 def magnitude(x):   #returns the order of magnitude of x

@@ -5,9 +5,9 @@ import numpy as np
 import sympy as sp
 import pandas as pd
 
-import pyscix.config as cfg
-import pyscix.objects as obj
-import pyscix.utils as utils
+import formulab.config as cfg
+import formulab.objects as obj
+import formulab.utils as utils
 
 def common(fig, textsize=cfg.textsize, xlabel='', ylabel='', title=''):
     plt.xlabel(xlabel)
