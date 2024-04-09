@@ -1,13 +1,6 @@
 import matplotlib.pyplot as plt
-import matplotlib.backend_bases as mpl_bck
 
-import numpy as np
-import sympy as sp
-import pandas as pd
-
-import formulab.config as cfg
-import formulab.objects as obj
-import formulab.utils as utils
+from formulab import config as cfg
 
 def common(fig, textsize=cfg.textsize, xlabel='', ylabel='', title=''):
     plt.xlabel(xlabel)

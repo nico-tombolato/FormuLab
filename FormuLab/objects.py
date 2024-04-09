@@ -10,9 +10,7 @@ import pandas as pd
 
 import random as rnd
 
-import formulab.plots as plots
-import formulab.utils as utils
-import formulab.curve_fit as curve_fit
+from formulab import curve_fit, plots, stats, utils
 import formulab.config as cfg
 
 class sym():
@@ -98,7 +96,7 @@ class var(sp.Symbol):
                 setattr(self, key, value)
             if self.val is None: print(f'Insufficient data'); return
             else: 
-                self.prec = -utils.magnitude(self.val)
+                self.prec = -stats.magnitude(self.val)
                 self.dec = self.prec if self.prec>0 else 0
             if self.n is None: self.n, self.nu = 1, 0
             else: self.nu = int(self.n-1)
@@ -118,13 +116,13 @@ class var(sp.Symbol):
         else: print (rf'Invalid data type {type(values)}'); return
         
         self.cov[self]=self.sdm**2
-        self.prec = -utils.magnitude(self.sdm)
+        self.prec = -stats.magnitude(self.sdm)
         self.dec = self.prec if self.prec>0 else 0
         self.u = round(self.sdm, self.prec)   #Confidence Interval of 68%
         self.valr = round(self.val, self.prec)    #rounded value
 
         if alpha!=0: 
-            self.u_st = utils.u_st(self.nu, self.sdm, alpha).round(self.prec) #Confidence Interval of 95%
+            self.u_st = stats.u_st(self.nu, self.sdm, alpha).round(self.prec) #Confidence Interval of 95%
             self.alpha = alpha
         
         self.display(vbs=vbs)
@@ -354,7 +352,7 @@ class func(sp.Symbol):
     def ev(self, calc_u=True, alpha=cfg.alpha, vbs=cfg.vbs):
         self.val = self.f.subs(self.symsub).evalf()
         if not calc_u: 
-            self.prec = -utils.magnitude(self.val)
+            self.prec = -stats.magnitude(self.val)
             self.dec = self.prec if self.prec>0 else 0
             self.display(calc_u=calc_u, vbs=vbs)
             return {self.sym.val: self.val}
@@ -366,7 +364,7 @@ class func(sp.Symbol):
         self.sdm=self.expr.sdm.subs(self.symsub).evalf()
         self.sd=self.sdm
         
-        self.prec = -utils.magnitude(self.sdm)
+        self.prec = -stats.magnitude(self.sdm)
         self.dec = self.prec if self.prec>0 else 0
         self.u = round(self.sdm, self.prec)
         self.valr = round(self.val, self.prec)
@@ -382,7 +380,7 @@ class func(sp.Symbol):
         self.nufloat = self.expr.nu.subs(self.symsub).evalf()
         self.nu = int(sp.floor(self.nufloat))
         self.n = self.nu+1
-        self.u_st = utils.u_st(self.nu, self.sdm, alpha).round(self.prec) #Confidence Interval of (1-alpha)*100%
+        self.u_st = stats.u_st(self.nu, self.sdm, alpha).round(self.prec) #Confidence Interval of (1-alpha)*100%
 
         self.display(calc_u=calc_u, vbs=vbs)
         return {self.sym.val: self.val, 'dsym': self.sym.d, 'd': self.d, self.sym.sdm: self.sdm, self.sym.u: self.u, self.sym.valr: self.valr, self.sym.nu: self.nu, self.sym.u_st: self.u_st}
