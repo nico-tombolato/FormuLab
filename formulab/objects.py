@@ -35,8 +35,8 @@ class expr():
     def __init__(self, f):
         self.d = {x: sp.diff(f.f, x) for x in f.variables}
         self.sdm=sp.sqrt(sp.expand((f.sym.dVector*f.sym.covMatrix*f.sym.dVector.T)[0]))
-        # self.nu = f.sym.sdm**4/sum((f.sym.d[x] * x.sym.sdm)**4/x.sym.nu for x in f.variables)
-        self.nu = f.sym.sdm**4/(f.sym.dVector.applyfunc(lambda x: x**2)*f.sym.nuMatrix*(f.sym.covMatrix*f.sym.dVector.T).applyfunc(lambda x: x**2))[0]
+        self.nu = f.sym.sdm**4/sum((f.sym.d[x] * x.sym.sdm)**4/x.sym.nu for x in f.variables)
+        # self.nu = f.sym.sdm**4/(sp.expand((f.sym.dVector.applyfunc(lambda x: x**2)*f.sym.nuMatrix*(f.sym.covMatrix*f.sym.dVector.T).applyfunc(lambda x: x**2))[0])) ## , y en el calculo de sus grados de libertad efectivos.
         pass
 
 class param(sp.Symbol):
@@ -130,7 +130,7 @@ class var(sp.Symbol):
     
     def set_cov(self, var, cov):
         self.cov[var]=cov
-        self.sym.cov[var]=sp.Symbol(rf's_{{\overline{{{self.sym.flatname}}}\,\overline{{{var.sym.flatname}}}}}')
+        self.sym.cov[var]=sp.Symbol(rf's_{{\overline{{{self.sym.flatname}{var.sym.flatname}}}}}')
     
     def display(self, vbs=cfg.vbs):
         if vbs>=2: display(Math(rf'{self.sym.val} = {self.val} \, {sp.latex(self.unit)}'))
@@ -139,7 +139,7 @@ class var(sp.Symbol):
         if self.alpha!=0 and self.u_st and vbs>=1: display(Math(rf'\text{{Confidence interval of {int((1-self.alpha)*100)}\,\%\,:}}\quad {self.sym.argument}_{{{self.sym.subindex} \, {int((1-self.alpha)*100)}\%}}=({self.valr:.{self.dec}f} \pm {self.u_st:.{self.dec}f}) \, {sp.latex(self.unit)}'))
         return
         
-class var_list(sp.Symbol):
+class varList(sp.Symbol):
     def __new__(self, name, values, unit='', alpha=0, vbs=cfg.vbs):
         symbols = sym(name, unit)
         self = sp.Symbol.__new__(self, symbols.printname)
@@ -202,7 +202,7 @@ class var_list(sp.Symbol):
     
     def set_cov(self, var, cov):
         self.cov[var]=cov
-        self.sym.cov[var]=sp.Symbol(rf's_{{\overline{{{self.sym.flatname}}}\,\overline{{{var.sym.flatname}}}}}')
+        self.sym.cov[var]=sp.Symbol(rf's_{{\overline{{{self.sym.flatname}{var.sym.flatname}}}}}')
         
     def display(self, vbs=cfg.vbs):
         for x in self.vars:
@@ -222,7 +222,7 @@ class table():
             unit=nameunit[-1]
             if len(nameunit)!=2: unit=''
             a,s,flat,printname,name=utils.name_splitter(name)
-            self.varls[self.varnames[i]]=var_list(name, {'val': list(table[self.varnames[i]]), 'u': list(table[self.varnames[nvars+i]])}, unit, vbs=vbs)
+            self.varls[self.varnames[i]]=varList(name, {'val': list(table[self.varnames[i]]), 'u': list(table[self.varnames[nvars+i]])}, unit, vbs=vbs)
             setattr(self, name, self.varls[self.varnames[i]])
         
         tableDictx={}
@@ -237,25 +237,25 @@ class table():
         return str(display(Markdown(self.formatted)))
 
 class func(sp.Symbol):
-    def __new__(self, name, f, unit='', calc_ev=True, calc_u=True, alpha=cfg.alpha, vbs=cfg.vbs):
+    def __new__(self, name, f, unit='', calcEv=True, calcU=True, alpha=cfg.alpha, vbs=cfg.vbs):
         symbols = sym(name, unit)
         self = sp.Symbol.__new__(self, symbols.printname)
         self.sym = symbols
         self.unit = self.sym.unit if self.sym.unit != 1 else ''
         
-        return self.calc(f, calc_ev=calc_ev, calc_u=calc_u, alpha=alpha, vbs=vbs)
+        return self.calc(f, calcEv=calcEv, calcU=calcU, alpha=alpha, vbs=vbs)
     
-    def calc(self, f, calc_ev=True, calc_u=True, alpha=cfg.alpha, vbs=cfg.vbs):
+    def calc(self, f, calcEv=True, calcU=True, alpha=cfg.alpha, vbs=cfg.vbs):
         self.sym.cov[self]=self.sym.sdm**2
         self.cov={}
         
         self.f = sp.nsimplify(f)
         self.fsymbols = list(f.free_symbols)   #Get all variables and parameters
         
-        if not calc_ev: 
-            self.display(calc_ev=calc_ev, calc_u=calc_u, vbs=vbs)
+        if not calcEv: 
+            self.display(calcEv=calcEv, calcU=calcU, vbs=vbs)
             self.getsym()
-        else: self(calc_u=calc_u, alpha=alpha, vbs=vbs)
+        else: self(calcU=calcU, alpha=alpha, vbs=vbs)
         return self
     
     def getsym(self):
@@ -263,7 +263,7 @@ class func(sp.Symbol):
         for x in self.fsymbols:  #Classify them
             tx = type(x)
             if tx is var: self.vars.append(x)
-            elif tx is var_list: self.varsl.append(x)
+            elif tx is varList: self.varsl.append(x)
             elif tx is param: self.params.append(x)
             else: print (rf'Invalid variable type {tx}'); pass
         self.variables = self.vars + self.varsl
@@ -278,7 +278,7 @@ class func(sp.Symbol):
                 self.sym.covMatrix[i,j]=self.sym.covMatrix[j,i]
         self.expr=expr(self)
     
-    def __call__(self, values={}, calc_u=True, alpha=cfg.alpha, vbs=cfg.vbs):
+    def __call__(self, values={}, calcU=True, alpha=cfg.alpha, vbs=cfg.vbs):
         self.getsym()
         self.symsub = {}
         self.many = {}
@@ -290,23 +290,22 @@ class func(sp.Symbol):
             self.symsub.update({x.sym.sdm: x.sdm, x.sym.nu: x.nu})
             self.symsub.update({v:x.cov[y] for y,v in x.sym.cov.items()})
             if x.sym.sdm in values.keys():
-                self.symsub.update({x.sym.cov[x]:values[x.sym.sdm]})
+                self.symsub.update({x.sym.cov[x]:values[x.sym.sdm]**2})
                 
-            
         self.symsub.update(values)
-        
         for k, v in self.symsub.items():
             if isinstance(v, (list, np.ndarray)):
                 self.many[k]=v      #adding dict of list to a new dict
-        
-        for x in self.variables:    ##This can and SHOULD be simplified
+                
+        for x in self.variables:    ##This SHOULD be simplified
             if x in self.many:
                 lenx=len(self.symsub[x])
                 if isinstance(self.symsub[x.sym.sdm], (list, np.ndarray)):
                     if len(self.symsub[x.sym.sdm])!=lenx:
                         self.symsub[x.sym.sdm] = self.symsub[x.sym.sdm][0]
-                        self.symsub[x.sym.cov[x]] = self.symsub[x.sym.sdm][0]**2
+                        self.symsub[x.sym.cov[x]] = self.symsub[x.sym.sdm]**2
                         self.many.pop(x.sym.sdm)
+                        self.many.pop(x.sym.cov[x])
                         if vbs>=2: print(rf'Warning: First {x.sym.sdm} is being used')
                 if isinstance(self.symsub[x.sym.nu], (list, np.ndarray)):
                     if len(self.symsub[x.sym.nu])!=lenx:
@@ -320,46 +319,48 @@ class func(sp.Symbol):
                             self.symsub[x.sym.cov[y]] = self.symsub[x.sym.cov[y]][0]
                             self.many.pop(x.sym.cov[y])
                             if vbs>=2: print(rf'Warning: First {x.sym.cov[y]} is being used')
-            if isinstance(self.symsub[x.sym.sdm], (list, np.ndarray)):
-                self.symsub[x.sym.sdm] = self.symsub[x.sym.sdm][0]
-                self.symsub[x.sym.cov[x]] = self.symsub[x.sym.sdm][0]**2
-                self.many.pop(x.sym.sdm)
-                if vbs>=2: print(rf'Warning: First {x.sym.sdm} is being used')
-            if isinstance(self.symsub[x.sym.nu], (list, np.ndarray)):
-                self.symsub[x.sym.nu] = self.symsub[x.sym.nu][0]
-                self.many.pop(x.sym.nu)
-                if vbs>=2: print(rf'Warning: First {x.sym.nu} is being used')
+            else:
+                if isinstance(self.symsub[x.sym.sdm], (list, np.ndarray)):
+                    self.symsub[x.sym.sdm] = self.symsub[x.sym.sdm][0]
+                    self.symsub[x.sym.cov[x]] = self.symsub[x.sym.sdm]**2
+                    self.many.pop(x.sym.sdm)
+                    if vbs>=2: print(rf'Warning: First {x.sym.sdm} is being used')
+                if isinstance(self.symsub[x.sym.nu], (list, np.ndarray)):
+                    self.symsub[x.sym.nu] = self.symsub[x.sym.nu][0]
+                    self.many.pop(x.sym.nu)
+                    if vbs>=2: print(rf'Warning: First {x.sym.nu} is being used')
                 
-            for y,v in x.sym.cov.items():
-                if isinstance(self.symsub[x.sym.cov[y]], (list, np.ndarray)):
-                    self.symsub[x.sym.cov[y]] = self.symsub[x.sym.cov[y]][0]
-                    self.many.pop(x.sym.cov[y])
-                    if vbs>=2: print(rf'Warning: First {x.sym.cov[y]} is being used')
-                
-        self.manyld=[dict(zip(self.many,t)) for t in zip(*self.many.values())]  #turning dict of lists to list of dicts
+                for y,v in x.sym.cov.items():
+                    if isinstance(self.symsub[x.sym.cov[y]], (list, np.ndarray)):
+                        self.symsub[x.sym.cov[y]] = self.symsub[x.sym.cov[y]][0]
+                        self.many.pop(x.sym.cov[y])
+                        if vbs>=2: print(rf'Warning: First {x.sym.cov[y]} is being used')
+                 
+        self.manyld=[dict(zip(self.many, t)) for t in zip(*self.many.values())]  #turning dict of lists to list of dicts
         listlen = len(self.manyld)
 
         setlen=len({len(v) for k,v in self.many.items()}) #the length of the set of number of lengths of lists
-        if setlen > 1:
-            print('all var_lists must be of same length')
-            return
-        elif setlen==1:
+        # if setlen > 1:
+        #     print('all var_lists must be of same length')
+        #     return
+        # elif setlen==1:
+        if setlen >= 1:
             self.out, self.vals=np.empty(listlen, dtype=dict), np.empty(listlen)
             for i in range(0,listlen):
                 self.symsub.update(self.manyld[i])
                 if vbs>=1: display(Math(rf'\text{{Evaluating in}}\quad {self.manyld[i]}'))
-                self.out[i]=self.ev(calc_u=calc_u, alpha=alpha, vbs=vbs)
+                self.out[i]=self.ev(calcU=calcU, alpha=alpha, vbs=vbs)
                 self.vals[i]=self.out[i][self.sym.val]
         else:
-            self.out=self.ev(calc_u=calc_u, alpha=alpha, vbs=vbs)
+            self.out=self.ev(calcU=calcU, alpha=alpha, vbs=vbs)
         return self.out
     
-    def ev(self, calc_u=True, alpha=cfg.alpha, vbs=cfg.vbs):
+    def ev(self, calcU=True, alpha=cfg.alpha, vbs=cfg.vbs):
         self.val = self.f.subs(self.symsub).evalf()
-        if not calc_u: 
+        if not calcU: 
             self.prec = -stats.magnitude(self.val)
             self.dec = self.prec if self.prec>0 else 0
-            self.display(calc_u=calc_u, vbs=vbs)
+            self.display(calcU=calcU, vbs=vbs)
             return {self.sym.val: self.val}
         
         for x in self.variables:
@@ -376,7 +377,7 @@ class func(sp.Symbol):
         
         self.alpha=0
         if alpha==0:
-            self.display(calc_u=calc_u, vbs=vbs)
+            self.display(calcU=calcU, vbs=vbs)
             return {self.sym.val: self.val, 'dsym': self.sym.d, 'd': self.d, self.sym.sdm: self.sdm, self.sym.u: self.u, self.sym.valr: self.valr}
 
         self.alpha=alpha
@@ -387,37 +388,37 @@ class func(sp.Symbol):
         self.n = self.nu+1
         self.u_st = stats.u_st(self.nu, self.sdm, alpha).round(self.prec) #Confidence Interval of (1-alpha)*100%
 
-        self.display(calc_u=calc_u, vbs=vbs)
+        self.display(calcU=calcU, vbs=vbs)
         return {self.sym.val: self.val, 'dsym': self.sym.d, 'd': self.d, self.sym.sdm: self.sdm, self.sym.u: self.u, self.sym.valr: self.valr, self.sym.nu: self.nu, self.sym.u_st: self.u_st}
     
     def set_cov(self, var, cov):
         self.cov[var]=cov
-        self.sym.cov[var]=sp.Symbol(rf's_{{\overline{{{self.sym.flatname}}}\,\overline{{{var.sym.flatname}}}}}')
+        self.sym.cov[var]=sp.Symbol(rf's_{{\overline{{{self.sym.flatname}{var.sym.flatname}}}}}')
     
-    def plot(self, ran=(), pts=200, ref=0, color=cfg.plotcolor, linewidth=cfg.linewidth, textsize=cfg.textsize, label=' ', xlabel='', ylabel=''):
+    def plot(self, ran=(), pts=100, ref=0, color=cfg.plotcolor, linewidth=cfg.linewidth, textsize=cfg.textsize, label=' ', xlabel='', ylabel=''):
         if ref==0: ref=id(self)
-        if label == ' ': label=rf'${self}({self.x})={sp.latex(self.f)}$'
-        if not xlabel: xlabel=rf'${self.x}\, [{self.x.unit}]$'
-        if not ylabel: ylabel=rf'${self}\, [{self.unit}]$'
+        if label == ' ': label=rf'${sp.latex(self)}({sp.latex(self.x)})={sp.latex(self.f)}$'
+        if not xlabel: xlabel=rf'${sp.latex(self.x)}\, [{sp.latex(self.x.unit)}]$'
+        if not ylabel: ylabel=rf'${sp.latex(self)}\, [{sp.latex(self.unit)}]$'
         
         if ran==(): 
             ran=(self.x.val[0],self.x.val[-1])
         if ran[0]>=ran[1]: ran = ran[1],ran[0]
         step=(ran[1]-ran[0])/(pts+1)
         
-        xVal=np.arange(ran[0], ran[1],step)
-        self({self.x:xVal}, calc_u=False, alpha=0, vbs=0)
+        xVal=np.arange(ran[0], ran[1]+step,step)
+        self({self.x:xVal}, calcU=False, alpha=0, vbs=0)
         yVal=self.vals
-        self.fig = plots.plot(xVal, yVal, pts=pts, ref=ref, color=color, linewidth=linewidth, textsize=textsize, label=label, xlabel=xlabel, ylabel=ylabel)
+        self.fig = plots.plot(xVal, yVal, ref=ref, color=color, linewidth=linewidth, textsize=textsize, label=label, xlabel=xlabel, ylabel=ylabel)
         return self.fig
     
-    def display(self, calc_ev=True, calc_u=True, vbs=cfg.vbs):
+    def display(self, calcEv=True, calcU=True, vbs=cfg.vbs):
         if vbs>=2: display(Math(rf'{self} = {sp.latex(self.f)}'))
-        if not calc_ev: return
+        if not calcEv: return
         
         symsubfsymbols={k: v for k, v in self.symsub.items() if k in self.fsymbols}
         if vbs>=2: display(Math(rf'{self}({symsubfsymbols}) = {self.val} \, {sp.latex(self.unit)}'))
-        if not calc_u: return
+        if not calcU: return
         
         if vbs>=2:
             for x in self.variables:
@@ -436,20 +437,21 @@ class func(sp.Symbol):
 
 class funcFit(func):
     def __new__(self, name, f, y, unit='', alpha=cfg.alpha, vbs=cfg.vbs):
-        self = func.__new__(self, name, f, unit=unit, calc_ev=False, calc_u=False, vbs=0)
+        if unit=='':unit=y.sym.strUnit
+        self = func.__new__(self, name, f, unit=unit, calcEv=False, calcU=False, vbs=0)
         
         return self.calc_fit(name, f, y, unit=unit, vbs=vbs)
     
     def calc_fit(self, name, f, y, unit='', alpha=cfg.alpha, vbs=cfg.vbs):
         for x in self.variables:
-            if type(x) is var_list:
-                # if hasattr(self, 'x'): print(f'Many var_list found or function has attribute x'); return
+            if type(x) is varList:
+                # if hasattr(self, 'x'): print(f'Many varList found or function has attribute x'); return
                 self.x=x
         if not hasattr(self, 'x'): print(f'x not found in variables'); return
         
         x=self.x
         self.y=y
-        if type(x) is not var_list or type(y) is not var_list: print(f'x, y must be of type var_list'); return
+        if type(x) is not varList or type(y) is not varList: print(f'x, y must be of type varList'); return
         if x.n != y.n: print(rf'{x}, {y} must be of same length'); return
         
         self.n = x.n
@@ -463,34 +465,33 @@ class funcFit(func):
         
         self.lamb=sp.lambdify([x]+self.adjParams, self.f)
         self.fitRes=curve_fit.func_fit(self)
-        print(self.fitRes)
         for i in range(0,self.nAdjParams):
             self.adjParams[i].calc({'val': self.fitRes[0][i], 'sdm': np.sqrt(self.fitRes[1][i][i]), 'nu':self.nuParams}, alpha=alpha, vbs=0)
             for j in range(0,self.nAdjParams):
                 if i==j: continue
                 self.adjParams[i].set_cov(self.adjParams[j], self.fitRes[1][i][j])
            
-        self({x:x.val}, calc_u=False, alpha=0, vbs=0)   
+        self({x:x.val}, calcU=False, alpha=0, vbs=0)   
         self.fitResult=self.vals
-        self.res = var_list('r', {'val': y.val - self.fitResult}, unit=self.y.sym.strUnit, vbs=0)
+        self.res = varList('r', {'val': y.val - self.fitResult}, unit=self.y.sym.strUnit, vbs=0)
     
         self.display(vbs=vbs)
         return self
     
     def err_scatter(self, ref=0, dotsize=cfg.dotsize, color=cfg.scattercolor, ecolor=cfg.ecolor, elinewidth=1, capsize=2, textsize=cfg.textsize, label=' ', xlabel='', ylabel=''):
         if ref==0: ref=id(self)
-        if label == ' ': label=rf'$({self.x},{self.y})$'
-        if not xlabel: xlabel=rf'${self.x}\, [{self.x.unit}]$'
-        if not ylabel: ylabel=rf'${self}\, [{self.unit}]$'
+        if label == ' ': label=rf'$({sp.latex(self.x)},{sp.latex(self.y)})$'
+        if not xlabel: xlabel=rf'${sp.latex(self.x)}\, [{sp.latex(self.x.unit)}]$'
+        if not ylabel: ylabel=rf'${sp.latex(self)}\, [{sp.latex(self.unit)}]$'
         
         self.fig = plots.err_scatter(self.x.val, self.y.val, self.x.sdm, self.y.sdm, ref=ref, dotsize=dotsize, color=color, ecolor=ecolor, elinewidth=elinewidth, capsize=capsize, textsize=textsize, label=label, xlabel=xlabel, ylabel=ylabel)
         return self.fig
     
     def res_plot(self, ref=0, dotsize=cfg.dotsize, color=cfg.scattercolor, textsize=cfg.textsize, label=' ', xlabel='', ylabel=''):
         if ref==0: ref=id(self.res)
-        if label == ' ': label=rf'$({self.x},{self.res})$'
-        if not xlabel: xlabel=rf'${self.x}\, [{self.x.unit}]$'
-        if not ylabel: ylabel=rf'${self.res}\, [{self.res.unit}]$'
+        if label == ' ': label=rf'$({sp.latex(self.x)},{sp.latex(self.res)})$'
+        if not xlabel: xlabel=rf'${sp.latex(self.x)}\, [{sp.latex(self.x.unit)}]$'
+        if not ylabel: ylabel=rf'${sp.latex(self.res)}\, [{sp.latex(self.res.unit)}]$'
 
         self.resFig = plots.scatter(self.x.val, self.res.val, ref=ref, dotsize=dotsize, color=color, textsize=textsize, label=label, xlabel=xlabel, ylabel=ylabel)
         return self.resFig
@@ -531,20 +532,20 @@ class pasco():
             self.colPsc[i] = {int(self.cols[self.ncols*j+i].split(' ')[-1]): self.cols[self.ncols*j+i] for j in range(0,int(len(self.cols)/self.ncols))}
         self.display()
         
-    def __call__(self, col=None, row=(), ref=0, plot=False):
+    def __call__(self, col=None, ran=(), ref=0, plot=False):
         if type(col) is int:
             col = self.cols[col]
-        elif isinstance(col, (list, np.ndarray)):
+        elif isinstance(col, (list, np.ndarray, tuple)):
             col = self.colPsc[col[0]][col[1]]
             
         colArr=utils.rm(self.df.loc[:,col])
         
         fRow=len(colArr)*self.step
-        if row==():
-            row=(0,fRow)
-        rowArr = np.arange(row[0], row[1], self.step)
+        if ran==():
+            ran=(0,fRow)
+        rowArr = np.arange(ran[0], ran[1], self.step)
         
-        colArr=colArr[int(row[0]/self.step):int(row[1]/self.step)]
+        colArr=colArr[int(ran[0]/self.step):int(ran[1]/self.step)]
         
         if plot:
             if ref==0: ref=rnd.randint(10**5,10**6)

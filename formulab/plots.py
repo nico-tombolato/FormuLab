@@ -12,9 +12,8 @@ def common(fig, textsize=cfg.textsize, xlabel='', ylabel='', title=''):
     fig.canvas.header_visible=cfg.header_visible
     return fig
 
-def plot(x, y, pts=10, ref=0, color=cfg.plotcolor, linewidth=cfg.linewidth, textsize=cfg.textsize, label='', xlabel='', ylabel='', title=''):
+def plot(x, y, ref=0, color=cfg.plotcolor, linewidth=cfg.linewidth, textsize=cfg.textsize, label='', xlabel='', ylabel='', title=''):
     fig=plt.figure(ref)
-    
     plt.plot(x, y, label=label, color=color, linewidth=linewidth)
     return common(fig, textsize=textsize, xlabel=xlabel, ylabel=ylabel, title=title)
 

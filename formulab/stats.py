@@ -5,7 +5,7 @@ import numpy as np
 from scipy import stats as st
 
 from formulab import config as cfg
-from formulab.objects import *
+from formulab import objects as obj
 
 def magnitude(x):   #returns the order of magnitude of x
     if x==0: return 0
@@ -71,8 +71,8 @@ def t_test_varvar(x, y, alpha=cfg.alpha):
     t_test_final(x, y, nu, t, alpha)
     
 def t_test(x, y, alpha=cfg.alpha):
-    if type(y) is param: t_test_varparam(x, y, alpha)
-    elif type(y) in [var, func]: t_test_varvar(x, y, alpha)
+    if type(y) is obj.param: t_test_varparam(x, y, alpha)
+    elif type(y) in [obj.var, obj.func, obj.funcFit]: t_test_varvar(x, y, alpha)
     else: print('Invalid type of data')
 
 
