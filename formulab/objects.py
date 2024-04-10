@@ -136,7 +136,7 @@ class var(sp.Symbol):
         if vbs>=2: display(Math(rf'{self.sym.val} = {self.val} \, {sp.latex(self.unit)}'))
         if vbs>=2: display(Math(rf'{self.sym.sd} = {self.sd} \quad {self.sym.sdm} = {self.sdm} \quad {self.sym.nu} = {self.nu}'))
         if vbs>=1: display(Math(rf'{self} = ({self.valr:.{self.dec}f} \pm {self.u:.{self.dec}f}) \, {sp.latex(self.unit)}'))
-        if self.alpha!=0 and self.u_st and vbs>=1: display(Math(rf'\text{{Confidence interval of {int((1-self.alpha)*100)}\,\%\,:}}\quad {self.sym.argument}_{{{self.sym.subindex} \, {int((1-self.alpha)*100)}\%}}=({self.valr:.{self.dec}f} \pm {self.u_st:.{self.dec}f}) \, {sp.latex(self.unit)}'))
+        if self.alpha!=0 and self.u_st and vbs>=1: display(Math(rf'\text{{Intervalo de confianza de {int((1-self.alpha)*100)}\,\%\,:}}\quad {self.sym.argument}_{{{self.sym.subindex} \, {int((1-self.alpha)*100)}\%}}=({self.valr:.{self.dec}f} \pm {self.u_st:.{self.dec}f}) \, {sp.latex(self.unit)}'))
         return
         
 class varList(sp.Symbol):
@@ -348,7 +348,7 @@ class func(sp.Symbol):
             self.out, self.vals=np.empty(listlen, dtype=dict), np.empty(listlen)
             for i in range(0,listlen):
                 self.symsub.update(self.manyld[i])
-                if vbs>=1: display(Math(rf'\text{{Evaluating in}}\quad {self.manyld[i]}'))
+                if vbs>=1: display(Math(rf'\text{{Evaluando con}}\quad {self.manyld[i]}'))
                 self.out[i]=self.ev(calcU=calcU, alpha=alpha, vbs=vbs)
                 self.vals[i]=self.out[i][self.sym.val]
         else:
@@ -432,7 +432,7 @@ class func(sp.Symbol):
         if self.alpha==0: return
         
         if vbs>=2: display(Math(rf'{self.sym.nu} = {sp.latex(self.expr.nu)} = {self.nufloat} \approx {self.nu}'))
-        if vbs>= 1: display(Math(rf'\text{{Confidence interval of {int((1-self.alpha)*100)}\,\%\,:}}\quad {self.sym.argument}_{{{self.sym.subindex} \, {int((1-self.alpha)*100)}\%}}=({self.valr:.{self.dec}f} \pm {self.u_st:.{self.dec}f}) \, {sp.latex(self.unit)}'))
+        if vbs>= 1: display(Math(rf'\text{{Intervalo de confianza de {int((1-self.alpha)*100)}\,\%\,:}}\quad {self.sym.argument}_{{{self.sym.subindex} \, {int((1-self.alpha)*100)}\%}}=({self.valr:.{self.dec}f} \pm {self.u_st:.{self.dec}f}) \, {sp.latex(self.unit)}'))
         return
 
 class funcFit(func):
