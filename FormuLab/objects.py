@@ -17,7 +17,7 @@ class sym():
     def __init__(self, name, unit=''):
         self.argument, self.subindex, self.flatname, self.printname, self.name = utils.name_splitter(name)  
         self.strUnit = unit
-        self.unit = sp.parsing.sympy_parser.parse_expr(unit) if unit != '' else 1
+        self.unit = sp.parsing.sympy_parser.parse_expr(unit, transformations=sp.parsing.sympy_parser.T[:]) if unit != '' else 1
         
         self.val = sp.Symbol(rf'\overline{{{self.printname}}}')
         self.valr = sp.Symbol(rf'\overline{{{self.argument}_{{{self.subindex}\, rounded}}}}')
@@ -112,9 +112,9 @@ class var(sp.Symbol):
             self.n = len(values)
             self.nu = int(self.n-1)
             self.sd = np.std(values, ddof=1)   #Standard Deviation
-            self.sdm = self.sd/np.sqrt(self.n)   #Standard Deviation of the mean
         else: print (rf'Invalid data type {type(values)}'); return
         
+        self.sdm = self.sd/np.sqrt(self.n)   #Standard Deviation of the mean
         self.cov[self]=self.sdm**2
         self.prec = -stats.magnitude(self.sdm)
         self.dec = self.prec if self.prec>0 else 0
@@ -136,7 +136,7 @@ class var(sp.Symbol):
         if vbs>=2: display(Math(rf'{self.sym.val} = {self.val} \, {sp.latex(self.unit)}'))
         if vbs>=2: display(Math(rf'{self.sym.sd} = {self.sd} \quad {self.sym.sdm} = {self.sdm} \quad {self.sym.nu} = {self.nu}'))
         if vbs>=1: display(Math(rf'{self} = ({self.valr:.{self.dec}f} \pm {self.u:.{self.dec}f}) \, {sp.latex(self.unit)}'))
-        if self.alpha!=0 and self.u_st and vbs>=1: display(Math(rf'\text{{Confidence interval of {int((1-self.alpha)*100)}\,\%\,:}}\quad {self.sym.argument}_{{{self.sym.subindex} \, {int((1-self.alpha)*100)}\%}}=({self.valr:.{self.dec}f} \pm {self.u_st:.{self.dec}f}) \, {self.unit}'))
+        if self.alpha!=0 and self.u_st and vbs>=1: display(Math(rf'\text{{Confidence interval of {int((1-self.alpha)*100)}\,\%\,:}}\quad {self.sym.argument}_{{{self.sym.subindex} \, {int((1-self.alpha)*100)}\%}}=({self.valr:.{self.dec}f} \pm {self.u_st:.{self.dec}f}) \, {sp.latex(self.unit)}'))
         return
         
 class var_list(sp.Symbol):
