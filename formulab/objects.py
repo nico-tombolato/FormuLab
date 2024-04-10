@@ -210,20 +210,17 @@ class varList(sp.Symbol):
         return
     
 class table():
-    def __init__(self, fName, varlists=[], varnames='', sep=',', vbs=1):
-        if varlists: utils.file_from_obj(fName, varlists, sep)
-        table, nvars = utils.read_file(fName, varnames=varnames, sep=sep)
-        self.table, self.nvars = table, nvars
-        self.varnames = table.columns
+    def __init__(self, fName, varNames='', sep=',', vbs=1):
+        self.table, self.vars, self.varsU, self.n = utils.read_file(fName, varNames=varNames, sep=sep)
         self.varls={}
-        for i in range(0,nvars):    
-            nameunit=self.varnames[i].replace(' ', '').replace(']','').split('[')
+        for i in range(0,self.n):    
+            nameunit=self.vars[i].replace(' ', '').replace(']','').split('[')
             name=nameunit[0]
             unit=nameunit[-1]
             if len(nameunit)!=2: unit=''
             a,s,flat,printname,name=utils.name_splitter(name)
-            self.varls[self.varnames[i]]=varList(name, {'val': list(table[self.varnames[i]]), 'u': list(table[self.varnames[nvars+i]])}, unit, vbs=vbs)
-            setattr(self, name, self.varls[self.varnames[i]])
+            self.varls[name]=varList(name, {'val': list(self.table.loc[:][self.vars[i]]), 'u': list(self.table.loc[:][self.varsU[i]])}, unit, vbs=vbs)
+            setattr(self, name, self.varls[name])
         
         tableDictx={}
         for key, varlist in self.varls.items():

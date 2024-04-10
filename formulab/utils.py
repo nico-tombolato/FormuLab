@@ -23,22 +23,22 @@ def flatten(name):
 
 
 ##file utils
-def read_file(fName, varnames='', sep=','):
-    table = pd.read_csv(fName, sep=sep, header=None)
-    if not is_number(table.loc[0][0]):
-        table = pd.read_csv(fName, sep=sep, header=0)
-    ncols = table.shape[1]
-    if ncols%2==1:
-        print('Invalid structure')
-    nvars=int(ncols/2)
-    
-    var=np.empty(nvars, dtype=object)
-
-    if varnames:
-        varnames=varnames.split(sep)
-        for i in range(0,nvars):
-            table.rename({rf'{i}':varnames[i], rf'{nvars+i}': rf'u_{varnames[i]}'}) 
-    return table, nvars
+def read_file(fName, varNames='', sep=','):
+    df = pd.read_csv(fName, sep=sep, header=None)
+    vars, varsU = [], []
+    if not is_number(df.loc[0][0]): #has varnames
+        df = pd.read_csv(fName, sep=sep, header=0)
+        df.columns=df.columns.str.replace(' ', '')
+        for c in df.columns:
+            if c[:2] == 'u_': varsU.append(c)
+            else: vars.append(c)
+        n = len(vars)
+    else:
+        vars = varNames.replace(' ', '').split(sep)
+        n = len(vars)
+        varsU = [rf'u_{varNames[i]}' for i in range(0,n)]
+        df.columns=[vars[i] for i in range(0,n)] + [varsU[i] for i in range(0,n)]
+    return df, vars, varsU, n
 
 def save_file(fName, tableDict, sep=','):
     table = pd.DataFrame.from_dict(tableDict)
@@ -72,6 +72,24 @@ def is_number(string):
 def rm(arr):
     return np.array([x for x in arr if not pd.isnull(x)])
 
+
+
+# def read_file(fName, varnames='', sep=','):
+#     table = pd.read_csv(fName, sep=sep, header=None)
+#     if not is_number(table.loc[0][0]):
+#         table = pd.read_csv(fName, sep=sep, header=0)
+#     ncols = table.shape[1]
+#     if ncols%2==1:
+#         print('Invalid structure')
+#     nvars=int(ncols/2)
+    
+#     var=np.empty(nvars, dtype=object)
+
+#     if varnames:
+#         varnames=varnames.split(sep)
+#         for i in range(0,nvars):
+#             table.rename({rf'{i}':varnames[i], rf'{nvars+i}': rf'u_{varnames[i]}'}) 
+#     return table, nvars
 
 # def is_in_list(list1, list2):
 #     return lambda list1, list2: any(i in list2 for i in list1)
