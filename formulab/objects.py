@@ -423,7 +423,8 @@ class func(sp.Symbol):
         if vbs>=2:
             for x in self.variables:
                 deriv_u = self.sym.unit/x.sym.unit
-                display(Math(rf'{self.sym.d[x]} = {sp.latex(self.expr.d[x])} = {self.d[x]} \, {sp.latex(deriv_u if deriv_u != 1 else '')}'))
+                deriv_u= sp.latex(deriv_u if deriv_u != 1 else '')
+                display(Math(rf'{self.sym.d[x]} = {sp.latex(self.expr.d[x])} = {self.d[x]} \, {deriv_u}'))
         
             display(Math(rf'{self.sym.sdm} = {sp.latex(self.expr.sdm)}'))
             display(Math(rf'{self.sym.sdm} = {self.sdm} \, {sp.latex(self.unit)}'))
