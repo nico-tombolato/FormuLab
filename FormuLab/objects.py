@@ -289,6 +289,9 @@ class func(sp.Symbol):
         for x in self.variables:
             self.symsub.update({x.sym.sdm: x.sdm, x.sym.nu: x.nu})
             self.symsub.update({v:x.cov[y] for y,v in x.sym.cov.items()})
+            if x.sym.sdm in values.keys():
+                self.symsub.update({x.sym.cov[x]:values[x.sym.sdm]})
+                
             
         self.symsub.update(values)
         
@@ -302,6 +305,7 @@ class func(sp.Symbol):
                 if isinstance(self.symsub[x.sym.sdm], (list, np.ndarray)):
                     if len(self.symsub[x.sym.sdm])!=lenx:
                         self.symsub[x.sym.sdm] = self.symsub[x.sym.sdm][0]
+                        self.symsub[x.sym.cov[x]] = self.symsub[x.sym.sdm][0]**2
                         self.many.pop(x.sym.sdm)
                         if vbs>=2: print(rf'Warning: First {x.sym.sdm} is being used')
                 if isinstance(self.symsub[x.sym.nu], (list, np.ndarray)):
@@ -318,6 +322,7 @@ class func(sp.Symbol):
                             if vbs>=2: print(rf'Warning: First {x.sym.cov[y]} is being used')
             if isinstance(self.symsub[x.sym.sdm], (list, np.ndarray)):
                 self.symsub[x.sym.sdm] = self.symsub[x.sym.sdm][0]
+                self.symsub[x.sym.cov[x]] = self.symsub[x.sym.sdm][0]**2
                 self.many.pop(x.sym.sdm)
                 if vbs>=2: print(rf'Warning: First {x.sym.sdm} is being used')
             if isinstance(self.symsub[x.sym.nu], (list, np.ndarray)):
