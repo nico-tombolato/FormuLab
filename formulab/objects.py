@@ -35,8 +35,8 @@ class expr():
     def __init__(self, f):
         self.d = {x: sp.diff(f.f, x) for x in f.variables}
         self.sdm=sp.sqrt(sp.expand((f.sym.dVector*f.sym.covMatrix*f.sym.dVector.T)[0]))
-        self.nu = f.sym.sdm**4/sum((f.sym.d[x] * x.sym.sdm)**4/x.sym.nu for x in f.variables)
-        # self.nu = f.sym.sdm**4/(sp.expand((f.sym.dVector.applyfunc(lambda x: x**2)*f.sym.nuMatrix*(f.sym.covMatrix*f.sym.dVector.T).applyfunc(lambda x: x**2))[0])) ## , y en el calculo de sus grados de libertad efectivos.
+        # self.nu = f.sym.sdm**4/sum((f.sym.d[x] * x.sym.sdm)**4/x.sym.nu for x in f.variables)
+        self.nu = f.sym.sdm**4/sp.expand((f.sym.dVector.applyfunc(lambda x: x**2)*f.sym.nuMatrix*(f.sym.covMatrix*f.sym.dVector.T).applyfunc(lambda x: x**2))[0])
         pass
 
 class param(sp.Symbol):
@@ -476,22 +476,22 @@ class funcFit(func):
         self.display(vbs=vbs)
         return self
     
-    def err_scatter(self, ref=0, dotsize=cfg.dotsize, color=cfg.scattercolor, ecolor=cfg.ecolor, elinewidth=1, capsize=2, textsize=cfg.textsize, label=' ', xlabel='', ylabel=''):
+    def err_scatter(self, ref=0, dotsize=cfg.dotsize, color=cfg.scattercolor, ecolor=cfg.ecolor, elinewidth=1, capsize=2, textsize=cfg.textsize, label=' ', xlabel='', ylabel='', title=''):
         if ref==0: ref=id(self)
         if label == ' ': label=rf'$({sp.latex(self.x)},{sp.latex(self.y)})$'
         if not xlabel: xlabel=rf'${sp.latex(self.x)}\, [{sp.latex(self.x.unit)}]$'
         if not ylabel: ylabel=rf'${sp.latex(self)}\, [{sp.latex(self.unit)}]$'
         
-        self.fig = plots.err_scatter(self.x.val, self.y.val, self.x.sdm, self.y.sdm, ref=ref, dotsize=dotsize, color=color, ecolor=ecolor, elinewidth=elinewidth, capsize=capsize, textsize=textsize, label=label, xlabel=xlabel, ylabel=ylabel)
+        self.fig = plots.err_scatter(self.x.val, self.y.val, self.x.sdm, self.y.sdm, ref=ref, dotsize=dotsize, color=color, ecolor=ecolor, elinewidth=elinewidth, capsize=capsize, textsize=textsize, label=label, xlabel=xlabel, ylabel=ylabel, title=title)
         return self.fig
     
-    def res_plot(self, ref=0, dotsize=cfg.dotsize, color=cfg.scattercolor, textsize=cfg.textsize, label=' ', xlabel='', ylabel=''):
+    def res_plot(self, ref=0, dotsize=cfg.dotsize, color=cfg.scattercolor, textsize=cfg.textsize, label=' ', xlabel='', ylabel='', title=''):
         if ref==0: ref=id(self.res)
         if label == ' ': label=rf'$({sp.latex(self.x)},{sp.latex(self.res)})$'
         if not xlabel: xlabel=rf'${sp.latex(self.x)}\, [{sp.latex(self.x.unit)}]$'
         if not ylabel: ylabel=rf'${sp.latex(self.res)}\, [{sp.latex(self.res.unit)}]$'
 
-        self.resFig = plots.scatter(self.x.val, self.res.val, ref=ref, dotsize=dotsize, color=color, textsize=textsize, label=label, xlabel=xlabel, ylabel=ylabel)
+        self.resFig = plots.scatter(self.x.val, self.res.val, ref=ref, dotsize=dotsize, color=color, textsize=textsize, label=label, xlabel=xlabel, ylabel=ylabel, title=title)
         return self.resFig
         
         
@@ -500,8 +500,8 @@ class funcFit(func):
         plt.close(id(self.res))
         
         self.plot()
-        self.err_scatter()
-        self.res_plot()
+        self.err_scatter(title=rf'${self}$(${self.x}$) ajustada y puntos (${self.x}$, ${self.y}$)')
+        self.res_plot(title=rf'Restos $r = {self.y}-{self}$')
     
     def display(self, vbs=cfg.vbs, **kwargs):
         if vbs>=1: 
@@ -530,7 +530,7 @@ class pasco():
             self.colPsc[i] = {int(self.cols[self.ncols*j+i].split(' ')[-1]): self.cols[self.ncols*j+i] for j in range(0,int(len(self.cols)/self.ncols))}
         self.display()
         
-    def __call__(self, col=None, ran=(), ref=0, plot=False):
+    def __call__(self, col=None, ran=(), ref=0, plot=False, color=cfg.plotcolor, label='', title=''): ###ADD to GITHUB
         if type(col) is int:
             col = self.cols[col]
         elif isinstance(col, (list, np.ndarray, tuple)):
@@ -544,7 +544,7 @@ class pasco():
         rowArr = np.arange(ran[0], ran[1], self.step)
         
         colArr=colArr[int(ran[0]/self.step):int(ran[1]/self.step)]
-        
+        if title=='': title=col
         if plot:
             if ref==0: ref=rnd.randint(10**5,10**6)
             self.fig=plots.plot(rowArr, colArr, ref=ref, title=col, xlabel='Tiempo [s]')
