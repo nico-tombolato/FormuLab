@@ -12,7 +12,7 @@ def magnitude(x):   #returns the order of magnitude of x
     return int(sp.floor(sp.log(abs(x),10)))
 
 def set_cov(x,y, cov=0):
-    if cov==0: cov=np.cov(x.val,y.val)[0][1]
+    if cov==0: cov=np.cov(x.values,y.values)[0][1]
     x.set_cov(y,cov)
     y.set_cov(x,cov)
 
