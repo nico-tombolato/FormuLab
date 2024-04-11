@@ -45,7 +45,7 @@ def t_test_varvar(x, y, alpha=cfg.alpha):
     display(Math(rf'\text{{Se analiza si las varianzas son homogéneas con un nivel de significancia }}\, \alpha = {2*alpha}'))
     display(Math(rf'\text{{Hipótesis nula }}\, H_0: {x.sym.sd} = {y.sym.sd} \quad \text{{Hipótesis alternativa }}\, H_a: {x.sym.sd} \neq {y.sym.sd}'))
     display(Math(rf'f = {sp.latex(x.sym.sd**2/y.sym.sd**2)} = {f}'))
-    display(Math(rf'\text{{Región de rechazo: }}\, RR = \{{f \geq F_{{{alpha},{x.nu},{y.nu}}} \, o \, f \leq F_{{{1-alpha},{x.nu},{y.nu}}} \}}'))
+    display(Math(rf'\text{{Región de rechazo: }}\, RR = \{{f \geq F_{{{alpha},{x.nu},{y.nu}}} \, o \, f \leq F_{{{1-alpha},{y.nu},{x.nu}}} \}}'))
     display(Math(rf'RR = \{{f \geq {F:.3f} \, o \, f \leq {1/F:.3f} \}}'))
     
     nus=sp.Symbol(rf'\nu')
