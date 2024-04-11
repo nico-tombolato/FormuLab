@@ -496,9 +496,6 @@ class funcFit(func):
         
         
     def plots(self):
-        plt.close(id(self))
-        plt.close(id(self.res))
-        
         self.plot()
         self.err_scatter(title=rf'${self}$(${self.x}$) ajustada y puntos (${self.x}$, ${self.y}$)')
         self.res_plot(title=rf'Restos $r = {self.y}-{self}$')
@@ -530,7 +527,7 @@ class pasco():
             self.colPsc[i] = {int(self.cols[self.ncols*j+i].split(' ')[-1]): self.cols[self.ncols*j+i] for j in range(0,int(len(self.cols)/self.ncols))}
         self.display()
         
-    def __call__(self, col=None, ran=(), ref=0, plot=False, color=cfg.plotcolor, label='', title=''): ###ADD to GITHUB
+    def __call__(self, col=None, ran=(), ref=0, plot=False, color=cfg.plotcolor, label='', ylabel='', title=''): ###ADD to GITHUB
         if type(col) is int:
             col = self.cols[col]
         elif isinstance(col, (list, np.ndarray, tuple)):
@@ -547,7 +544,7 @@ class pasco():
         if title=='': title=col
         if plot:
             if ref==0: ref=rnd.randint(10**5,10**6)
-            self.fig=plots.plot(rowArr, colArr, ref=ref, title=col, xlabel='Tiempo [s]')
+            self.fig=plots.plot(rowArr, colArr, ref=ref, color=color, label=label, xlabel='Tiempo [s]', ylabel=ylabel, title=title)
         return colArr
     
     def __repr__(self):

@@ -53,18 +53,20 @@ def t_test_varvar(x, y, alpha=cfg.alpha):
         display(Math(rf'f \not\in RR \quad \text{{Se acepta la Hipótesis nula, }}\, {x.sym.sd} = {y.sym.sd} \, \text{{ con un nivel de significancia }}\, \alpha = {2*alpha}')) 
         
         display(Math(rf'\text{{Se procede a la comparación para varianzas homogéneas con un nivel de significancia }}\, \alpha = {alpha}'))
+        display(Math(rf'\text{{Hipótesis nula }}\, H_0: {x} = {y} \quad \text{{Hipótesis alternativa }}\, H_a: {x} \neq {y}'))
         t = float((x.val-y.val)/(sp.sqrt((x.nu*x.sd**2+y.nu*y.sd**2)*(1/x.n+1/y.n)/(x.n+y.n-2))))
         s_p=sp.Symbol('s_p')
         nu=x.n+y.n-2
-        display(Math(rf't = {sp.latex((x.sym.val-y.sym.val)/(s_p*sp.sqrt(1/x.sym.n+1/y.sym.n)))}\quad con \, {s_p**2} = {sp.latex((x.sym.nu*x.sym.sd**2+y.sym.nu*y.sym.sd**2)/(nus))}\,;\,{nus}={x.sym.n+y.sym.n-2}={nu}'))
+        display(Math(rf't = {sp.latex((x.sym.val-y.sym.val)/(s_p*sp.sqrt(1/x.sym.n+1/y.sym.n)))}\quad con \, {sp.latex(s_p**2)} = {sp.latex((x.sym.nu*x.sym.sd**2+y.sym.nu*y.sym.sd**2)/(nus))}\,;\,{nus}={x.sym.n+y.sym.n-2}={nu}'))
         display(Math(rf't={t}'))
     else:
         display(Math(rf'f \in RR \quad \text{{Se rechaza la Hipótesis nula, }} \, {x.sym.sd} \neq {y.sym.sd} \, \text{{ con un nivel de significancia }}\, \alpha = {2*alpha}'))
         
         display(Math(rf'\text{{Se procede a la comparación para varianzas no homogéneas con un nivel de significancia }}\, \alpha = {alpha}'))
+        display(Math(rf'\text{{Hipótesis nula }}\, H_0: {x} = {y} \quad \text{{Hipótesis alternativa }}\, H_a: {x} \neq {y}'))
         t = float((x.val-y.val)/(sp.sqrt(x.sd**2/x.n+y.sd**2/y.n)))
         nuf=(x.sd**2/x.n+y.sd**2/y.n)**2/((x.sd**2/x.n)**2/x.nu+(y.sd**2/y.n)**2/y.nu)
-        nu=np.floor(nuf)
+        nu=int(np.floor(nuf))
         display(Math(rf't = {sp.latex((x.sym.val-y.sym.val)/(sp.sqrt(x.sym.sd**2/x.sym.n+y.sym.sd**2/y.sym.n)))}={t}'))
         display(Math(rf'{nus}={sp.latex((x.sym.sd**2/x.sym.n+y.sym.sd**2/y.sym.n)**2/((x.sym.sd**2/x.sym.n)**2/x.sym.nu+(y.sym.sd**2/y.sym.n)**2/y.sym.nu))}= {nuf}\approx {nu}'))
     
