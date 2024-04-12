@@ -106,15 +106,16 @@ class var(sp.Symbol):
                     if vbs>=2: print(f'Warning var has no attributes')
                     return self
                 self.sd = self.sdm
+            else: self.sdm = self.sd/np.sqrt(self.n)   #Standard Deviation of the mean
             
         elif isinstance(values, (list, np.ndarray)):
             self.val = np.mean(values)  #mean value
             self.n = len(values)
             self.nu = int(self.n-1)
             self.sd = np.std(values, ddof=1)   #Standard Deviation
+            self.sdm = self.sd/np.sqrt(self.n)   #Standard Deviation of the mean
         else: print (rf'Invalid data type {type(values)}'); return
         
-        self.sdm = self.sd/np.sqrt(self.n)   #Standard Deviation of the mean
         self.cov[self]=self.sdm**2
         self.prec = -stats.magnitude(self.sdm)
         self.dec = self.prec if self.prec>0 else 0
@@ -286,13 +287,13 @@ class func(sp.Symbol):
         for x in self.variables:
             self.symsub.update({x.sym.sdm: x.sdm, x.sym.nu: x.nu})
             self.symsub.update({v:x.cov[y] for y,v in x.sym.cov.items()})
-            if x.sym.sdm in values.keys():
-                self.symsub.update({x.sym.cov[x]:values[x.sym.sdm]**2})
                 
         self.symsub.update(values)
         for k, v in self.symsub.items():
             if isinstance(v, (list, np.ndarray)):
                 self.many[k]=v      #adding dict of list to a new dict
+            if k==x.sym.sdm:
+                self.symsub.update({x.sym.cov[x]:v**2})
                 
         for x in self.variables:    ##This SHOULD be simplified
             if x in self.many:
@@ -345,7 +346,7 @@ class func(sp.Symbol):
             self.out, self.vals=np.empty(listlen, dtype=dict), np.empty(listlen)
             for i in range(0,listlen):
                 self.symsub.update(self.manyld[i])
-                if vbs>=1: display(Math(rf'\text{{Evaluando con}}\quad {self.manyld[i]}'))
+                if vbs>=1: display(Math(rf'\text{{Evaluando en}}\quad {self.manyld[i]}'))
                 self.out[i]=self.ev(calcU=calcU, alpha=alpha, vbs=vbs)
                 self.vals[i]=self.out[i][self.sym.val]
         else:
