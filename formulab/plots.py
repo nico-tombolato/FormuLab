@@ -8,6 +8,8 @@ def common(fig, textsize=cfg.textsize, xlabel='', ylabel='', title=''):
     plt.title(title)
     plt.legend(prop={'size': textsize})
     
+    plt.grid()
+    
     fig.canvas.toolbar_position=cfg.toolbar_position
     fig.canvas.header_visible=cfg.header_visible
     return fig

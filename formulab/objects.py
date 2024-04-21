@@ -37,6 +37,7 @@ class expr():
         self.sdm=sp.sqrt(sp.expand((f.sym.dVector*f.sym.covMatrix*f.sym.dVector.T)[0]))
         # self.nu = f.sym.sdm**4/sum((f.sym.d[x] * x.sym.sdm)**4/x.sym.nu for x in f.variables)
         self.nu = f.sym.sdm**4/sp.expand((f.sym.dVector.applyfunc(lambda x: x**2)*f.sym.nuMatrix*(f.sym.covMatrix*f.sym.dVector.T).applyfunc(lambda x: x**2))[0])
+        self.nuUnexpanded = f.sym.sdm**4/(f.sym.dVector.applyfunc(lambda x: x**2)*f.sym.nuMatrix*(f.sym.covMatrix*f.sym.dVector.T).applyfunc(lambda x: x**2))[0]
         pass
 
 class param(sp.Symbol):
@@ -137,7 +138,7 @@ class var(sp.Symbol):
         if vbs>=2: display(Math(rf'{self.sym.val} = {self.val} \, {sp.latex(self.unit)}'))
         if vbs>=2: display(Math(rf'{self.sym.sd} = {self.sd} \quad {self.sym.sdm} = {self.sdm} \quad {self.sym.nu} = {self.nu}'))
         if vbs>=1: display(Math(rf'{self} = ({self.valr:.{self.dec}f} \pm {self.u:.{self.dec}f}) \, {sp.latex(self.unit)}'))
-        if self.alpha!=0 and self.u_st and vbs>=1: display(Math(rf'\text{{Intervalo de confianza de {int((1-self.alpha)*100)}\,\%\,:}}\quad {self.sym.argument}_{{{self.sym.subindex} \, {int((1-self.alpha)*100)}\%}}=({self.valr:.{self.dec}f} \pm {self.u_st:.{self.dec}f}) \, {sp.latex(self.unit)}'))
+        if self.alpha!=0 and self.u_st and vbs>=1: display(Math(rf'\text{{Intervalo de confianza de \({int((1-self.alpha)*100)}\%\):}}\quad {self.sym.argument}_{{{self.sym.subindex} \, {int((1-self.alpha)*100)}\%}}=({self.valr:.{self.dec}f} \pm {self.u_st:.{self.dec}f}) \, {sp.latex(self.unit)}'))
         return
         
 class varList(sp.Symbol):
@@ -250,6 +251,7 @@ class func(sp.Symbol):
         self.f = sp.nsimplify(f)
         self.fsymbols = list(f.free_symbols)   #Get all variables and parameters
         
+        self.id=rnd.randint(10**5,10**6)
         if not calcEv: 
             self.display(calcEv=calcEv, calcU=calcU, vbs=vbs)
             self.getsym()
@@ -383,6 +385,7 @@ class func(sp.Symbol):
         
         self.nufloat = self.expr.nu.subs(self.symsub).evalf()
         self.nu = int(sp.floor(self.nufloat))
+        if self.nu==0: self.nu=1
         self.n = self.nu+1
         self.u_st = stats.u_st(self.nu, self.sdm, alpha).round(self.prec) #Confidence Interval of (1-alpha)*100%
 
@@ -394,7 +397,7 @@ class func(sp.Symbol):
         self.sym.cov[var]=sp.Symbol(rf's_{{\overline{{{self.sym.flatname}{var.sym.flatname}}}}}')
     
     def plot(self, ran=(), pts=100, ref=0, color=cfg.plotcolor, linewidth=cfg.linewidth, textsize=cfg.textsize, label=' ', xlabel='', ylabel=''):
-        if ref==0: ref=id(self)
+        if ref==0: ref=self.id
         if label == ' ': label=rf'${sp.latex(self)}({sp.latex(self.x)})={sp.latex(self.f)}$'
         if not xlabel: xlabel=rf'${sp.latex(self.x)}\, [{sp.latex(self.x.unit)}]$'
         if not ylabel: ylabel=rf'${sp.latex(self)}\, [{sp.latex(self.unit)}]$'
@@ -431,7 +434,7 @@ class func(sp.Symbol):
         if self.alpha==0: return
         
         if vbs>=2: display(Math(rf'{self.sym.nu} = {sp.latex(self.expr.nu)} = {self.nufloat} \approx {self.nu}'))
-        if vbs>= 1: display(Math(rf'\text{{Intervalo de confianza de {int((1-self.alpha)*100)}\,\%\,:}}\quad {self.sym.argument}_{{{self.sym.subindex} \, {int((1-self.alpha)*100)}\%}}=({self.valr:.{self.dec}f} \pm {self.u_st:.{self.dec}f}) \, {sp.latex(self.unit)}'))
+        if vbs>= 1: display(Math(rf'\text{{Intervalo de confianza de \({int((1-self.alpha)*100)}\%\):}}\quad {self.sym.argument}_{{{self.sym.subindex} \, {int((1-self.alpha)*100)}\%}}=({self.valr:.{self.dec}f} \pm {self.u_st:.{self.dec}f}) \, {sp.latex(self.unit)}'))
         return
 
 class funcFit(func):
@@ -439,9 +442,9 @@ class funcFit(func):
         if unit=='':unit=y.sym.strUnit
         self = func.__new__(self, name, f, unit=unit, calcEv=False, calcU=False, vbs=0)
         
-        return self.calc_fit(name, f, y, unit=unit, vbs=vbs)
+        return self.calc_fit(y, vbs=vbs)
     
-    def calc_fit(self, name, f, y, unit='', alpha=cfg.alpha, vbs=cfg.vbs):
+    def calc_fit(self, y, alpha=cfg.alpha, vbs=cfg.vbs):
         for x in self.variables:
             if type(x) is varList:
                 # if hasattr(self, 'x'): print(f'Many varList found or function has attribute x'); return
@@ -464,6 +467,10 @@ class funcFit(func):
         
         self.lamb=sp.lambdify([x]+self.adjParams, self.f)
         self.fitRes=curve_fit.func_fit(self)
+        
+        if vbs>=2: # For debugging
+            for i in range(0,self.nAdjParams):
+                display(Math(rf'{self.adjParams[i]} = {self.fitRes[0][i]} \quad {self.adjParams[i].sym.sd}={self.fitRes[1][i][i]}'))
         for i in range(0,self.nAdjParams):
             self.adjParams[i].calc({'val': self.fitRes[0][i], 'sdm': np.sqrt(self.fitRes[1][i][i]), 'nu':self.nuParams}, alpha=alpha, vbs=0)
             for j in range(0,self.nAdjParams):
@@ -474,11 +481,13 @@ class funcFit(func):
         self.fitResult=self.vals
         self.res = varList('r', {'val': y.val - self.fitResult}, unit=self.y.sym.strUnit, vbs=0)
     
+        self.id=rnd.randint(10**5,10**6)
+        self.resId=rnd.randint(10**5,10**6)
         self.display(vbs=vbs)
         return self
     
     def err_scatter(self, ref=0, dotsize=cfg.dotsize, color=cfg.scattercolor, ecolor=cfg.ecolor, elinewidth=1, capsize=2, textsize=cfg.textsize, label=' ', xlabel='', ylabel='', title=''):
-        if ref==0: ref=id(self)
+        if ref==0: ref=self.id
         if label == ' ': label=rf'$({sp.latex(self.x)},{sp.latex(self.y)})$'
         if not xlabel: xlabel=rf'${sp.latex(self.x)}\, [{sp.latex(self.x.unit)}]$'
         if not ylabel: ylabel=rf'${sp.latex(self)}\, [{sp.latex(self.unit)}]$'
@@ -487,7 +496,7 @@ class funcFit(func):
         return self.fig
     
     def res_plot(self, ref=0, dotsize=cfg.dotsize, color=cfg.scattercolor, textsize=cfg.textsize, label=' ', xlabel='', ylabel='', title=''):
-        if ref==0: ref=id(self.res)
+        if ref==0: ref=self.resId
         if label == ' ': label=rf'$({sp.latex(self.x)},{sp.latex(self.res)})$'
         if not xlabel: xlabel=rf'${sp.latex(self.x)}\, [{sp.latex(self.x.unit)}]$'
         if not ylabel: ylabel=rf'${sp.latex(self.res)}\, [{sp.latex(self.res.unit)}]$'
@@ -499,7 +508,7 @@ class funcFit(func):
     def plots(self):
         self.plot()
         self.err_scatter(title=rf'${self}$(${self.x}$) ajustada y puntos (${self.x}$, ${self.y}$)')
-        self.res_plot(title=rf'Restos $r = {self.y}-{self}$')
+        self.res_plot(title=rf'Residuos $r = {self.y}-{self}$')
     
     def display(self, vbs=cfg.vbs, **kwargs):
         if vbs>=1: 
@@ -536,16 +545,18 @@ class pasco():
             
         colArr=utils.rm(self.df.loc[:,col])
         
-        fRow=len(colArr)*self.step
         if ran==():
-            ran=(0,fRow)
-        rowArr = np.arange(ran[0], ran[1], self.step)
+            tstep=np.vectorize(lambda x: x*self.step)
+            ranArr=tstep(np.arange(0, len(colArr)))
+        else:
+            ranArr=np.arange(ran[0], ran[1], self.step)
+            colArr=colArr[int(ran[0]/self.step):int(ran[-1]/self.step)]
         
-        colArr=colArr[int(ran[0]/self.step):int(ran[1]/self.step)]
         if title=='': title=col
         if plot:
             if ref==0: ref=rnd.randint(10**5,10**6)
-            self.fig=plots.plot(rowArr, colArr, ref=ref, color=color, label=label, xlabel='Tiempo [s]', ylabel=ylabel, title=title)
+            self.id=ref
+            self.fig=plots.plot(ranArr, colArr, ref=ref, color=color, label=label, xlabel='Tiempo [s]', ylabel=ylabel, title=title)
         return colArr
     
     def __repr__(self):
