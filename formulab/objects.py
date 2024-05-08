@@ -396,7 +396,7 @@ class func(sp.Symbol):
         self.cov[var]=cov
         self.sym.cov[var]=sp.Symbol(rf's_{{\overline{{{self.sym.flatname}{var.sym.flatname}}}}}')
     
-    def plot(self, ran=(), pts=100, ref=0, color=cfg.plotcolor, linewidth=cfg.linewidth, textsize=cfg.textsize, label=' ', xlabel='', ylabel=''):
+    def plot(self, ran=(), pts=100, ref=0, zorder=0, color=cfg.plotcolor, linewidth=cfg.linewidth, textsize=cfg.textsize, label=' ', xlabel='', ylabel='', title=''):
         if ref==0: ref=self.id
         if label == ' ': label=rf'${sp.latex(self)}({sp.latex(self.x)})={sp.latex(self.f)}$'
         if not xlabel: xlabel=rf'${sp.latex(self.x)}\, [{sp.latex(self.x.unit)}]$'
@@ -410,7 +410,7 @@ class func(sp.Symbol):
         xVal=np.arange(ran[0], ran[1]+step,step)
         self({self.x:xVal}, calcU=False, alpha=0, vbs=0)
         yVal=self.vals
-        self.fig = plots.plot(xVal, yVal, ref=ref, color=color, linewidth=linewidth, textsize=textsize, label=label, xlabel=xlabel, ylabel=ylabel)
+        self.fig = plots.plot(xVal, yVal, ref=ref, zorder=zorder, color=color, linewidth=linewidth, textsize=textsize, label=label, xlabel=xlabel, ylabel=ylabel, title=title)
         return self.fig
     
     def display(self, calcEv=True, calcU=True, vbs=cfg.vbs):
@@ -486,13 +486,13 @@ class funcFit(func):
         self.display(vbs=vbs)
         return self
     
-    def err_scatter(self, ref=0, dotsize=cfg.dotsize, color=cfg.scattercolor, ecolor=cfg.ecolor, elinewidth=1, capsize=2, textsize=cfg.textsize, label=' ', xlabel='', ylabel='', title=''):
+    def err_scatter(self, ref=0, zorder=0, dotsize=cfg.dotsize, color=cfg.scattercolor, ecolor=cfg.ecolor, elinewidth=cfg.elinewidth, capsize=cfg.capsize, textsize=cfg.textsize, label=' ', xlabel='', ylabel='', title=''):
         if ref==0: ref=self.id
         if label == ' ': label=rf'$({sp.latex(self.x)},{sp.latex(self.y)})$'
         if not xlabel: xlabel=rf'${sp.latex(self.x)}\, [{sp.latex(self.x.unit)}]$'
         if not ylabel: ylabel=rf'${sp.latex(self)}\, [{sp.latex(self.unit)}]$'
         
-        self.fig = plots.err_scatter(self.x.val, self.y.val, self.x.sdm, self.y.sdm, ref=ref, dotsize=dotsize, color=color, ecolor=ecolor, elinewidth=elinewidth, capsize=capsize, textsize=textsize, label=label, xlabel=xlabel, ylabel=ylabel, title=title)
+        self.fig = plots.err_scatter(self.x.val, self.y.val, self.x.sdm, self.y.sdm, ref=ref, zorder=zorder, dotsize=dotsize, color=color, ecolor=ecolor, elinewidth=elinewidth, capsize=capsize, textsize=textsize, label=label, xlabel=xlabel, ylabel=ylabel, title=title)
         return self.fig
     
     def res_plot(self, ref=0, dotsize=cfg.dotsize, color=cfg.scattercolor, textsize=cfg.textsize, label=' ', xlabel='', ylabel='', title=''):
@@ -506,8 +506,8 @@ class funcFit(func):
         
         
     def plots(self):
-        self.plot()
-        self.err_scatter(title=rf'${self}$(${self.x}$) ajustada y puntos (${self.x}$, ${self.y}$)')
+        self.plot(zorder=10)
+        self.err_scatter(zorder=0, title=rf'${self}$(${self.x}$) ajustada y puntos (${self.x}$, ${self.y}$)')
         self.res_plot(title=rf'Residuos $r = {self.y}-{self}$')
     
     def display(self, vbs=cfg.vbs, **kwargs):
@@ -515,7 +515,7 @@ class funcFit(func):
             display(Math(rf'{self} = {sp.latex(self.f)}'))
             for param in self.adjParams:
                 param.display(vbs=vbs)
-            self.res()
+            if vbs>=2: self.res()
             self.plots()
             
 class pasco():

@@ -63,10 +63,13 @@ def var_dict(values=None, val=None, sd=None, sdm=None, n=None, nu=None, u=None, 
     
    
 #Other Utils
-def is_number(string):
-    if string is not str: string=str(string)
-    return string.replace('.','',1).replace('-','',1).isdigit()
+# def is_number(string):
+#     if string is not str: string=str(string)
+#     print(string)
+#     return string.replace('.','',1).replace('-','',1).isdigit()
 
+def is_number(x):
+    return isinstance(x, (int, float, complex)) and not isinstance(x, bool)
 
 ## Array utils
 def rm(arr):
